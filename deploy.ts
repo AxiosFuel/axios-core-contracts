@@ -9,14 +9,16 @@ import {
 import fs from 'fs-extra';
 import dotenv from 'dotenv';
 
+import {AxiosFuelCoreFactory} from './types';
+import {AxiosFuelCore} from './types';
+
 dotenv.config();
 
+
+
+// 0x423394F7B1549bF3C3C26cc8EC4e5A22D193d56cb27BB3d84b88aC94c9BbD5bF (contract id latest)
 async function main() {
   try {
-    await doLoanReq()
-    // const protocolAdminWallet = getProtocolAdminWallet();
-    // console.log(`Protocol Admin Wallet: ${protocolAdminWallet.address}`);
-    
     // const provider = await new Provider(
     //   'https://testnet.fuel.network/v1/graphql',
     // );
@@ -30,29 +32,19 @@ async function main() {
 
     // protocolDeployerWallet.connect(provider);
 
-    // const bytecode = fs.readFileSync('./out/debug/axios-fuel-core.bin');
-    // const bytecodeHex = hexlify(bytecode);
+    const protocolOwner = process.env.PROTOCOL_OWNER!;
+    const protocolOwnerWallet: WalletUnlocked =
+      Wallet.fromMnemonic(protocolOwner);
+    console.log(`Protocol Onwer Address: ${protocolOwnerWallet.address}`);
+    console.log(
+      `-------------------------------------------------------------`,
+    );
 
-    // const abi = fs.readJsonSync('./out/debug/axios-fuel-core-abi.json');
-    // const factory = new ContractFactory(
-    //   bytecodeHex,
-    //   abi,
-    //   protocolDeployerWallet,
-    // );
-
-    // const protocolOwner = process.env.PROTOCOL_OWNER!;
-    // const protocolOwnerWallet: WalletUnlocked =
-    //   Wallet.fromMnemonic(protocolOwner);
-    // console.log(`Protocol Onwer Address: ${protocolOwnerWallet.address}`);
-    // console.log(
-    //   `-------------------------------------------------------------`,
-    // );
-
-    // factory.setConfigurableConstants({
+    // const configurableConstants = {
     //   PROTOCOL_OWNER: { bits: protocolOwnerWallet.address.toB256() },
-    // });
+    // }
 
-    // const tx = await factory.deploy();
+    // const tx = await AxiosFuelCoreFactory.deploy(protocolDeployerWallet, {configurableConstants});
     // const response = await tx.waitForResult();
     // console.log('Contract Id: ', response.contract.id.toString());
     // console.log(
@@ -61,20 +53,29 @@ async function main() {
     // const protocolAdminWallet = getProtocolAdminWallet();
     // console.log(`Protocol Admin Wallet: ${protocolAdminWallet.address}`);
     // await addProtocolAdmin(
-    //   response.contract,
     //   getProtocolAdminWallet(),
     //   protocolOwnerWallet,
     // );
     // await updateProtocolConfigByAdmin(
-    //   response.contract,
     //   getProtocolAdminWallet(),
     // );
+    // await setProtocolStatusByAdmin(getProtocolAdminWallet());
+    // await getProtocolConfig();
+    await doLoanReq();
   } catch (error) {
     console.log('logged error')
     console.error(error);
   }
 }
 
+
+async function getContractInstanceWithProvidedWallet(wallet: WalletUnlocked){
+  const contractId = '0x423394F7B1549bF3C3C26cc8EC4e5A22D193d56cb27BB3d84b88aC94c9BbD5bF';
+  const provider = await getProviderForTestnet();
+  wallet.connect(provider);
+  const contractInstance = await new AxiosFuelCore(contractId, wallet);
+  return contractInstance
+}
 
 
 async function userOne() {
@@ -87,31 +88,49 @@ async function userOne() {
 }
 
 async function addProtocolAdmin(
-  contract: Contract,
   protocolAdminWallet: WalletUnlocked,
   protocolOwnerWallet: WalletUnlocked,
 ) {
-  contract.account = protocolOwnerWallet;
-  const provider = await getProviderForTestnet();
-  protocolOwnerWallet.connect(provider);
-  const tx = await contract.functions
+  const contractInstance = await getContractInstanceWithProvidedWallet(protocolOwnerWallet)
+  const tx = await contractInstance.functions
     .add_admin({
       bits: protocolAdminWallet.address.toB256(),
     })
     .call();
+    await tx.waitForResult();
   console.log(
     '---------------------------------------debug----------------------------------',
   );
 }
+
+async function getProtocolStatus() {
+  const userOneWallet = await userOne();
+  const contractInstance = await getContractInstanceWithProvidedWallet(userOneWallet);
+  const {value} = await contractInstance.functions.protocol_status().get();
+  console.log(value)
+}
+
+
+async function getProtocolConfig() {
+  const userOneWallet = await userOne();
+  const contractInstance = await getContractInstanceWithProvidedWallet(userOneWallet);
+  const {value} = await contractInstance.functions.protocol_config().get();
+  console.log(value)
+}
+async function setProtocolStatusByAdmin(protocolAdminWallet: WalletUnlocked) {
+  const contractInstance = await getContractInstanceWithProvidedWallet(protocolAdminWallet);
+  const tx = await contractInstance.functions
+    .update_protocol_status(false)
+    .call();
+  await tx.waitForResult();
+  console.log(`------------------------debug------------------------------------------`);
+}
+
 async function updateProtocolConfigByAdmin(
-  contract: Contract,
   protocolAdminWallet: WalletUnlocked,
 ) {
-  contract.account = protocolAdminWallet;
-  const provider = await getProviderForTestnet();
-  protocolAdminWallet.connect(provider);
-  console.log(`printf:1`);
-  const tx = await contract.functions
+  const contractInstance = await getContractInstanceWithProvidedWallet(protocolAdminWallet);
+  const tx = await contractInstance.functions
     .update_protocol_config({
       protocol_fee_receiver: { bits: protocolAdminWallet.address.toB256() },
       protocol_fee: 100,
@@ -122,8 +141,10 @@ async function updateProtocolConfigByAdmin(
       min_loan_duration: 600,
     })
     .call();
-  console.log(tx);
+  await tx.waitForResult();
+  console.log(`----------------------------------debug--------------------------------`)
 }
+
 function getContractFactory(wallet: WalletUnlocked): ContractFactory<Contract> {
   const bytecode = fs.readFileSync('./out/debug/axios-fuel-core.bin');
   const bytecodeHex = hexlify(bytecode);
@@ -132,7 +153,6 @@ function getContractFactory(wallet: WalletUnlocked): ContractFactory<Contract> {
   const factory = new ContractFactory(bytecodeHex, abi, wallet);
   return factory;
 }
-
 async function getProviderForTestnet(): Promise<Provider> {
   const provider = await new Provider(
     'https://testnet.fuel.network/v1/graphql',
@@ -200,17 +220,9 @@ async function doLoanReq(){
   const ownerWallet = getProtocolOwnerWallet();
   const wallet = getProtocolAdminWallet();
   const callerWallet = await userOne();
-  console.log('printf:0')
-  const provider = await new Provider(
-    'https://testnet.fuel.network/v1/graphql',
-  ); 
-  await callerWallet.connect(provider)
-  const abi = fs.readJsonSync('./out/debug/axios-fuel-core-abi.json');
-  const contractId = `0xeff0a0d9e58243ebc47fe91c84388a9e78782d18b55f1a5b06ad0fabe432ab29`;
-  const contract = new Contract(contractId, abi, callerWallet);
-  contract.account = callerWallet;
-  console.log(`printf:1`);
-  const tx = await contract.functions
+  const contractInstance = await getContractInstanceWithProvidedWallet(callerWallet);
+  contractInstance.account = callerWallet;
+  const tx = await contractInstance.functions
     .request_loan({     
     borrower: {bits: callerWallet.address.toB256()},
     lender: {bits: ownerWallet.address.toB256()},
@@ -231,7 +243,8 @@ async function doLoanReq(){
     })
     .callParams({forward: [10, '0xF8f8b6283d7fa5B672b530Cbb84Fcccb4ff8dC40f8176eF4544dDB1f1952AD07']})
     .call();
-  console.log(tx);
+  await tx.waitForResult();
+  console.log(tx)
 }
 
 
