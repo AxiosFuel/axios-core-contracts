@@ -4,7 +4,6 @@ mod interface;
 use interface::{Error, FixedMarket, Loan, ProtocolConfig, SRC20, Status};
 
 use events::*;
-use pyth_interface::{data_structures::price::{Price, PriceFeedId}, PythCore};
 use std::auth::msg_sender;
 use std::block::timestamp;
 use std::logging::log;
@@ -13,7 +12,9 @@ use std::call_frames::msg_asset_id;
 use std::contract_id::ContractId;
 use std::bytes::Bytes;
 use std::asset::*;
-// would be set while deployment as well
+use stork_sway_sdk::interface::{Stork, TemporalNumericValueInput};
+use signed_int::i128::I128;
+
 configurable {
     PROTOCOL_OWNER: Address = Address::zero(),
 }
@@ -21,11 +22,8 @@ configurable {
 storage {
     loans: StorageMap<u64, Loan> = StorageMap {},
     loan_length: u64 = 0,
-    pyth_contract: ContractId = ContractId::zero(),
-    stork_contract: Address = Address::zero(),
-    // (base_asset_id, quote_asset_id) -> PythFeedId
-    // eg map of (eth, usdc) -> PythFeedId (underlying type is b256)
-    oracle_config: StorageMap<(b256, b256), PriceFeedId> = StorageMap {},
+    stork_contract: ContractId = ContractId::zero(),
+    oracle_config: StorageMap<b256, b256> = StorageMap {},
     protocol_config: ProtocolConfig = ProtocolConfig::default(),
     protocol_admin: Address = Address::zero(),
     is_paused: bool = true,
@@ -38,11 +36,9 @@ impl FixedMarket for Contract {
     }
 
     #[storage(read, write)]
-    fn update_oracle_feed_id(base_asset_id: b256, quote_asset_id: b256, feed_id: b256) {
+    fn update_oracle_feed_id(base_asset_id: b256, feed_id: b256) {
         only_protocol_admin();
-        storage
-            .oracle_config
-            .insert((base_asset_id, quote_asset_id), feed_id);
+        storage.oracle_config.insert(base_asset_id, feed_id);
     }
 
     #[storage(read, write)]
@@ -50,6 +46,7 @@ impl FixedMarket for Contract {
         only_protocol_owner();
         storage.protocol_admin.write(admin);
     }
+
     #[storage(read, write)]
     fn update_protocol_config(config: ProtocolConfig) {
         only_protocol_admin();
@@ -94,25 +91,31 @@ impl FixedMarket for Contract {
                 .collateral,
             Error::ESameAssetSameCollateral,
         );
-        if (loan_info.liquidation.liquidation_request) {
-            let oracle_contract_id = storage.pyth_contract.read();
-            require(
-                oracle_contract_id != ContractId::zero(),
-                Error::EOracleNotSet,
-            );
-            let first_pair_check: b256 = storage.oracle_config.get((loan_info.collateral, loan_info.asset)).try_read().unwrap_or(b256::zero());
-            let second_pair_check: b256 = storage.oracle_config.get((loan_info.asset, loan_info.collateral)).try_read().unwrap_or(b256::zero());
-            require(
-                first_pair_check != second_pair_check,
-                Error::ENoOracleFeedAvailable,
-            );
-            require(
-                loan_info
-                    .liquidation
-                    .liquidation_threshold_in_bps < 10000,
-                Error::EInvalidLiqThreshold,
-            );
-        }
+
+        let oracle_contract_id = storage.stork_contract.read();
+        require(
+            oracle_contract_id != ContractId::zero(),
+            Error::EOracleNotSet,
+        );
+        let collateral_oracle_id: b256 = storage.oracle_config.get(loan_info.collateral).try_read().unwrap_or(b256::zero());
+        let asset_oracle_id: b256 = storage.oracle_config.get(loan_info.asset).try_read().unwrap_or(b256::zero());
+        require(
+            collateral_oracle_id != b256::zero(),
+            Error::EOralceCollateralNotSet,
+        );
+        require(asset_oracle_id != b256::zero(), Error::EOralceAssetNotSet);
+
+        require(
+            collateral_oracle_id != asset_oracle_id,
+            Error::ENoOracleFeedAvailable,
+        );
+
+        require(
+            loan_info
+                .liquidation
+                .liquidation_threshold_in_bps < 10000,
+            Error::EInvalidLiqThreshold,
+        );
         let amount = msg_amount();
         let asset_id: b256 = msg_asset_id().into();
         require(asset_id == loan_info.collateral, Error::EInvalidCollateral);
@@ -125,9 +128,7 @@ impl FixedMarket for Contract {
         loan.created_timestamp = timestamp();
         loan.start_timestamp = 0;
         loan.status = 0;
-        if (loan_info.liquidation.liquidation_request) {
-            loan.liquidation.liquidation_flag_internal = true;
-        }
+        loan.liquidation.liquidation_flag_internal = true;
         storage.loans.insert(storage.loan_length.read(), loan);
         storage.loan_length.write(storage.loan_length.read() + 1);
         log(LoanRequestedEvent {
@@ -169,25 +170,29 @@ impl FixedMarket for Contract {
                 .collateral,
             Error::ESameAssetSameCollateral,
         );
-        if (loan_info.liquidation.liquidation_request) {
-            let oracle_contract_id = storage.pyth_contract.read();
-            require(
-                oracle_contract_id != ContractId::zero(),
-                Error::EOracleNotSet,
-            );
-            let first_pair_check: b256 = storage.oracle_config.get((loan_info.collateral, loan_info.asset)).try_read().unwrap_or(b256::zero());
-            let second_pair_check: b256 = storage.oracle_config.get((loan_info.asset, loan_info.collateral)).try_read().unwrap_or(b256::zero());
-            require(
-                first_pair_check != second_pair_check,
-                Error::ENoOracleFeedAvailable,
-            );
-            require(
-                loan_info
-                    .liquidation
-                    .liquidation_threshold_in_bps < 10000,
-                Error::EInvalidLiqThreshold,
-            );
-        }
+        let oracle_contract_id = storage.stork_contract.read();
+        require(
+            oracle_contract_id != ContractId::zero(),
+            Error::EOracleNotSet,
+        );
+        let collateral_oracle_id: b256 = storage.oracle_config.get(loan_info.collateral).try_read().unwrap_or(b256::zero());
+        let asset_oracle_id: b256 = storage.oracle_config.get(loan_info.asset).try_read().unwrap_or(b256::zero());
+        require(
+            collateral_oracle_id != b256::zero(),
+            Error::EOralceCollateralNotSet,
+        );
+        require(asset_oracle_id != b256::zero(), Error::EOralceAssetNotSet);
+
+        require(
+            collateral_oracle_id != asset_oracle_id,
+            Error::ENoOracleFeedAvailable,
+        );
+        require(
+            loan_info
+                .liquidation
+                .liquidation_threshold_in_bps < 10000,
+            Error::EInvalidLiqThreshold,
+        );
         let amount = msg_amount();
         let asset_id: b256 = msg_asset_id().into();
         require(asset_id == loan_info.asset, Error::EInvalidAsset);
@@ -196,9 +201,8 @@ impl FixedMarket for Contract {
         loan.created_timestamp = timestamp();
         loan.start_timestamp = 0;
         loan.status = 0;
-        if (loan_info.liquidation.liquidation_request) {
-            loan.liquidation.liquidation_flag_internal = true;
-        }
+        loan.liquidation.liquidation_flag_internal = true;
+
         storage.loans.insert(storage.loan_length.read(), loan);
         storage.loan_length.write(storage.loan_length.read() + 1);
 
@@ -436,7 +440,6 @@ impl FixedMarket for Contract {
         require(loan.status == 2, Error::EInvalidStatus);
         let can_loan_be_liquidated = can_liquidate_loan(loan_id);
         if (can_loan_be_liquidated) {
-            // check for underflow? or edge cases
             let protocol_fee = (loan.collateral_amount * get_protocol_liq_fee()) / 10000;
             let liquidator_amount = (loan.collateral_amount * get_liquidator_fee()) / 10000;
             let lender_amount = loan.collateral_amount - liquidator_amount - protocol_fee;
@@ -467,31 +470,27 @@ impl FixedMarket for Contract {
     }
 
     #[storage(read)]
-    fn get_price_from_oracle(feed_id: PriceFeedId) -> u64 {
+    fn get_price_from_oracle(feed_id: b256) -> u256 {
         get_price_from_oracle_internal(feed_id)
     }
 
     #[payable, storage(read)]
-    fn pay_and_update_price_feeds(update_data: Vec<Bytes>) {
-        let pyth_contract_id = storage.pyth_contract.read();
-        require(pyth_contract_id != ContractId::zero(), Error::EOracleNotSet);
-        let pyth_oracle_dispatcher = abi(PythCore, pyth_contract_id.bits());
-        let fee_to_do_update = pyth_oracle_dispatcher.update_fee(update_data);
-        // magic for now taken from pyth fuel dev docs
-        let fuel_base_asset = 0xF8f8b6283d7fa5B672b530Cbb84Fcccb4ff8dC40f8176eF4544dDB1f1952AD07;
+    fn pay_and_update_price_feeds(update_data: Vec<TemporalNumericValueInput>) {
+        let stork_contract_id = storage.stork_contract.read();
         require(
-            msg_amount() >= fee_to_do_update,
+            stork_contract_id != ContractId::zero(),
+            Error::EOracleNotSet,
+        );
+        let stork_oracle_dispatcher = abi(Stork, stork_contract_id.bits());
+        let stork_update_fee = stork_oracle_dispatcher.get_update_fee_v1(update_data);
+        require(
+            msg_amount() >= stork_update_fee,
             Error::ENotEnoughForOracleUpdate,
         );
-        let fuel_base_asset_id: AssetId = get_asset_id_from_b256(fuel_base_asset);
-        require(
-            msg_asset_id() == fuel_base_asset_id,
-            Error::ENotOracleBaseAssetId,
-        );
-        pyth_oracle_dispatcher
-            .update_price_feeds {
-                asset_id: fuel_base_asset,
-                coins: fee_to_do_update,
+        stork_oracle_dispatcher
+            .update_temporal_numeric_values_v1 {
+                asset_id: msg_asset_id().bits(),
+                coins: stork_update_fee,
             }(update_data);
     }
 
@@ -616,86 +615,74 @@ fn can_liquidate_loan(loan_id: u64) -> bool {
 #[storage(read)]
 fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
     let loan = storage.loans.get(loan_id).read();
-    let price_feed_id_one: b256 = storage.oracle_config.get((loan.collateral, loan.asset)).try_read().unwrap_or(b256::zero());
-    let price_feed_id_two: b256 = storage.oracle_config.get((loan.asset, loan.collateral)).try_read().unwrap_or(b256::zero());
 
-    if (price_feed_id_one != b256::zero()) {
-        let src20_dispatcher_collateral = abi(SRC20, loan.collateral);
-        let collateral_asset_id = get_asset_id_from_b256(loan.collateral);
-        let collateral_decimal: u8 = src20_dispatcher_collateral.decimals(collateral_asset_id).unwrap();
-        let collateral_decimal_in_u32: u32 = u32::from(collateral_decimal);
-        // decimal of asset
-        let src20_dispatcher_asset = abi(SRC20, loan.asset);
-        let asset_id = get_asset_id_from_b256(loan.asset);
-        let asset_decimal: u8 = src20_dispatcher_asset.decimals(asset_id).unwrap();
-        let asset_decimal_in_u32: u32 = u32::from(asset_decimal);
-        // fetch price from oracle supported market eth/usdc
-        let price_from_oracle: u64 = get_price_from_oracle_internal(price_feed_id_one);
-        // now collateral and asset value in usd
-        let collateral_in_usd = (loan.collateral_amount * price_from_oracle) / (10_u64.pow(collateral_decimal_in_u32));
-        // hardcode for now the price of usdc
-        let price_of_usdc: u64 = 1_u64;
-        let loan_in_usd = (loan.asset_amount * price_of_usdc) / (10_u64.pow(asset_decimal_in_u32));
-        // TODO: Need to introduce the precision factor to balance the decimals in u32 instead of u64 
-        if loan_in_usd > (collateral_in_usd * loan.liquidation.liquidation_threshold_in_bps / 10000)
-        {
-            return true
-        } else {
-            return false
-        }
-    }
-    if (price_feed_id_two != b256::zero()) {
-        let src20_dispatcher_collateral = abi(SRC20, loan.collateral);
-        let collateral_asset_id = get_asset_id_from_b256(loan.collateral);
-        let collateral_decimal: u8 = src20_dispatcher_collateral.decimals(collateral_asset_id).unwrap();
-        let collateral_decimal_in_u32: u32 = u32::from(collateral_decimal);
+    let collateral_oracle_id: b256 = storage.oracle_config.get(loan.collateral).try_read().unwrap_or(b256::zero());
+    let asset_oracle_id: b256 = storage.oracle_config.get(loan.asset).try_read().unwrap_or(b256::zero());
 
-        // decimal of asset
-        let src20_dispatcher_asset = abi(SRC20, loan.asset);
-        let asset_id = get_asset_id_from_b256(loan.asset);
-        let asset_decimal: u8 = src20_dispatcher_asset.decimals(asset_id).unwrap();
-        let asset_decimal_in_u32: u32 = u32::from(asset_decimal);
-        // fetch price from oracle supported market eth/usdc
-        let price_from_oracle: u64 = get_price_from_oracle_internal(price_feed_id_two);
-        // now collateral and asset value in usd
-        let collateral_in_usd = (loan.collateral_amount * price_from_oracle) / (10_u64.pow(collateral_decimal_in_u32));
-        // hardcode for now the price of usdc
-        let price_of_usdc: u64 = 1_u64;
-        let loan_in_usd = (loan.asset_amount * price_of_usdc) / (10_u64.pow(asset_decimal_in_u32));
-        // TODO: Need to introduce the precision factor to balance the decimals in u32 instead of u64 
-        if loan_in_usd > (collateral_in_usd * loan.liquidation.liquidation_threshold_in_bps / 10000)
-        {
-            return true
-        } else {
-            return false
-        }
+    require(
+        collateral_oracle_id != b256::zero(),
+        Error::EOralceCollateralNotSet,
+    );
+    require(asset_oracle_id != b256::zero(), Error::EOralceAssetNotSet);
+
+    let liquidation_bps_u64: u64 = u64::from(10000u64);
+    let liquidation_bps_u256: u256 = liquidation_bps_u64.as_u256();
+
+    let src20_dispatcher_collateral = abi(SRC20, loan.collateral);
+    let collateral_asset_id = get_asset_id_from_b256(loan.collateral);
+    let collateral_decimal: u8 = src20_dispatcher_collateral.decimals(collateral_asset_id).unwrap();
+    let collateral_decimal_in_u32: u32 = collateral_decimal.as_u32();
+
+    let src20_dispatcher_asset = abi(SRC20, loan.asset);
+    let asset_id = get_asset_id_from_b256(loan.asset);
+    let asset_decimal: u8 = src20_dispatcher_asset.decimals(asset_id).unwrap();
+    let asset_decimal_in_u32: u32 = asset_decimal.as_u32();
+
+    let loan_asset_price_from_oracle: u256 = get_price_from_oracle_internal(asset_oracle_id);
+    let collateral_asset_price_from_oracle: u256 = get_price_from_oracle_internal(collateral_oracle_id);
+
+    let collateral_in_u256 = loan.collateral_amount.as_u256();
+    let collateral_in_usd = (collateral_in_u256 * collateral_asset_price_from_oracle) / (u256::from(10_u64).pow(collateral_decimal_in_u32));
+    let loan_in_u256 = loan.asset_amount.as_u256();
+    let loan_in_usd = (loan_in_u256 * loan_asset_price_from_oracle) / (u256::from(10_u64).pow(asset_decimal_in_u32));
+
+    if loan_in_usd > (collateral_in_usd * loan.liquidation.liquidation_threshold_in_bps.as_u256() / liquidation_bps_u256)
+    {
+        return true
+    } else {
+        return false
     }
-    false
 }
 
 #[storage(read)]
-fn get_price_from_oracle_internal(feed_id: PriceFeedId) -> u64 {
-    let pyth_contract_id = storage.pyth_contract.read();
-    require(pyth_contract_id != ContractId::zero(), Error::EOracleNotSet);
+fn get_price_from_oracle_internal(feed_id: b256) -> u256 {
+    let stork_contract_id = storage.stork_contract.read();
+    require(
+        stork_contract_id != ContractId::zero(),
+        Error::EOracleNotSet,
+    );
 
-    let pyth_oracle_dispatcher = abi(PythCore, pyth_contract_id.bits());
-    let oracle_result = pyth_oracle_dispatcher.price(feed_id);
+    let stork_oracle_dispatcher = abi(Stork, stork_contract_id.bits());
+    let oracle_result = stork_oracle_dispatcher.get_temporal_numeric_value_unchecked_v1(feed_id);
 
-    require(oracle_result.price > 0, Error::EOraclePriceZero);
-    // Pyth oracle uses TAI64 something other block timestamp so could be ahead, type is same u64
-    if (oracle_result.publish_time > timestamp()) {
-        let time_elapsed_in_seconds = oracle_result.publish_time - timestamp();
+    let time_stamp = oracle_result.get_timestamp_ns();
+    let quantized_value: I128 = oracle_result.get_quantized_value();
+
+    require(quantized_value > I128::zero(), Error::EOraclePriceZero);
+
+    if (time_stamp > timestamp()) {
+        let time_elapsed_in_seconds = time_stamp - timestamp();
         require(
             time_elapsed_in_seconds < get_oracle_max_stale(),
             Error::EOraclePriceStale,
         );
     } else {
-        let time_elapsed_in_seconds = timestamp() - oracle_result.publish_time;
+        let time_elapsed_in_seconds = timestamp() - time_stamp;
         require(
             time_elapsed_in_seconds < get_oracle_max_stale(),
             Error::EOraclePriceStale,
         );
     }
-    // TODO: check for the spread/confidence and validate
-    oracle_result.price
+    let price_U128 = quantized_value.underlying();
+    price_U128.as_u256()
 }

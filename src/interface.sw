@@ -1,7 +1,7 @@
 library;
 
 use std::bytes::Bytes;
-use pyth_interface::data_structures::price::PriceFeedId;
+use stork_sway_sdk::interface::TemporalNumericValueInput;
 
 pub enum Status {
     Pending: u8, // 0
@@ -12,7 +12,6 @@ pub enum Status {
     ExpiredClaim: u8, // 5
 }
 pub struct Liquidation {
-    pub liquidation_request: bool,
     pub liquidation_threshold_in_bps: u64,
     pub liquidation_flag_internal: bool,
 }
@@ -30,7 +29,6 @@ pub struct Loan {
     pub status: u64,
     pub liquidation: Liquidation,
 }
-
 pub struct ProtocolConfig {
     pub protocol_fee_receiver: Address,
     pub protocol_fee: u64,
@@ -80,6 +78,8 @@ pub enum Error {
     ENotProtocolAdmin: (),
     EProtocolConfigNotSet: (),
     EProtocolPaused: (),
+    EOralceCollateralNotSet: (),
+    EOralceAssetNotSet: (),
 }
 
 abi FixedMarket {
@@ -108,9 +108,9 @@ abi FixedMarket {
 
     // oracle
     #[payable, storage(read)]
-    fn pay_and_update_price_feeds(update_data: Vec<Bytes>);
+    fn pay_and_update_price_feeds(update_data: Vec<TemporalNumericValueInput>);
     #[storage(read)]
-    fn get_price_from_oracle(feed_id: PriceFeedId) -> u64;
+    fn get_price_from_oracle(feed_id: b256) -> u256;
 
     // Storage Read Function
     #[storage(read)]
@@ -142,7 +142,7 @@ abi FixedMarket {
     #[storage(read, write)]
     fn update_oracle_contract(addr: b256);
     #[storage(read, write)]
-    fn update_oracle_feed_id(base_asset_id: b256, quote_asset_id: b256, feed_id: b256);
+    fn update_oracle_feed_id(base_asset_id: b256, feed_id: b256);
 }
 
 // Only for query of decimals
