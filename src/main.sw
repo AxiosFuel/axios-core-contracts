@@ -642,12 +642,11 @@ fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
     let collateral_asset_price_from_oracle: u256 = get_price_from_oracle_internal(collateral_oracle_id);
 
     let collateral_in_u256 = loan.collateral_amount.as_u256();
-    let collateral_in_usd = (collateral_in_u256 * collateral_asset_price_from_oracle) / (u256::from(10_u64).pow(collateral_decimal_in_u32));
     let loan_in_u256 = loan.asset_amount.as_u256();
-    let loan_in_usd = (loan_in_u256 * loan_asset_price_from_oracle) / (u256::from(10_u64).pow(asset_decimal_in_u32));
 
-    if loan_in_usd > (collateral_in_usd * loan.liquidation.liquidation_threshold_in_bps.as_u256() / liquidation_bps_u256)
-    {
+    let loan_in_usd = loan_in_u256 * loan_asset_price_from_oracle * u256::from(10_u64).pow(collateral_decimal_in_u32) * liquidation_bps_u256;
+    let collateral_in_usd = collateral_in_u256 * collateral_asset_price_from_oracle * loan.liquidation.liquidation_threshold_in_bps.as_u256() * u256::from(10_u64).pow(asset_decimal_in_u32);
+    if loan_in_usd > collateral_in_usd {
         return true
     } else {
         return false
