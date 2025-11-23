@@ -16,15 +16,14 @@ import type {
   Address,
   BigNumberish,
   BN,
-  Bytes,
   FunctionFragment,
   InvokeFunction,
 } from 'fuels';
 
 import type { Enum, Vec } from "./common";
 
-export enum ErrorInput { EMsgSenderAndBorrowerNotSame = 'EMsgSenderAndBorrowerNotSame', EMsgSenderAndLenderNotSame = 'EMsgSenderAndLenderNotSame', EAmountLessThanOrEqualToRepaymentAmount = 'EAmountLessThanOrEqualToRepaymentAmount', ESameAssetSameCollateral = 'ESameAssetSameCollateral', EInvalidDuration = 'EInvalidDuration', EInvalidDecimal = 'EInvalidDecimal', EInvalidStatus = 'EInvalidStatus', EAlreadyExpired = 'EAlreadyExpired', EInvalidCollateral = 'EInvalidCollateral', EInvalidCollateralAmount = 'EInvalidCollateralAmount', EInvalidAsset = 'EInvalidAsset', EInvalidAssetAmount = 'EInvalidAssetAmount', EDurationNotFinished = 'EDurationNotFinished', ELoanReqNotExpired = 'ELoanReqNotExpired', ELoanOfferNotExpired = 'ELoanOfferNotExpired', ENoOracleFeedAvailable = 'ENoOracleFeedAvailable', EInvalidLiqThreshold = 'EInvalidLiqThreshold', EOracleNotSet = 'EOracleNotSet', EOraclePriceZero = 'EOraclePriceZero', EOraclePriceStale = 'EOraclePriceStale', ENotEnoughForOracleUpdate = 'ENotEnoughForOracleUpdate', ENotOracleBaseAssetId = 'ENotOracleBaseAssetId', ENotProtocolOwner = 'ENotProtocolOwner', ENotProtocolAdmin = 'ENotProtocolAdmin', EProtocolConfigNotSet = 'EProtocolConfigNotSet', EProtocolPaused = 'EProtocolPaused' };
-export enum ErrorOutput { EMsgSenderAndBorrowerNotSame = 'EMsgSenderAndBorrowerNotSame', EMsgSenderAndLenderNotSame = 'EMsgSenderAndLenderNotSame', EAmountLessThanOrEqualToRepaymentAmount = 'EAmountLessThanOrEqualToRepaymentAmount', ESameAssetSameCollateral = 'ESameAssetSameCollateral', EInvalidDuration = 'EInvalidDuration', EInvalidDecimal = 'EInvalidDecimal', EInvalidStatus = 'EInvalidStatus', EAlreadyExpired = 'EAlreadyExpired', EInvalidCollateral = 'EInvalidCollateral', EInvalidCollateralAmount = 'EInvalidCollateralAmount', EInvalidAsset = 'EInvalidAsset', EInvalidAssetAmount = 'EInvalidAssetAmount', EDurationNotFinished = 'EDurationNotFinished', ELoanReqNotExpired = 'ELoanReqNotExpired', ELoanOfferNotExpired = 'ELoanOfferNotExpired', ENoOracleFeedAvailable = 'ENoOracleFeedAvailable', EInvalidLiqThreshold = 'EInvalidLiqThreshold', EOracleNotSet = 'EOracleNotSet', EOraclePriceZero = 'EOraclePriceZero', EOraclePriceStale = 'EOraclePriceStale', ENotEnoughForOracleUpdate = 'ENotEnoughForOracleUpdate', ENotOracleBaseAssetId = 'ENotOracleBaseAssetId', ENotProtocolOwner = 'ENotProtocolOwner', ENotProtocolAdmin = 'ENotProtocolAdmin', EProtocolConfigNotSet = 'EProtocolConfigNotSet', EProtocolPaused = 'EProtocolPaused' };
+export enum ErrorInput { EMsgSenderAndBorrowerNotSame = 'EMsgSenderAndBorrowerNotSame', EMsgSenderAndLenderNotSame = 'EMsgSenderAndLenderNotSame', EAmountLessThanOrEqualToRepaymentAmount = 'EAmountLessThanOrEqualToRepaymentAmount', ESameAssetSameCollateral = 'ESameAssetSameCollateral', EInvalidDuration = 'EInvalidDuration', EInvalidDecimal = 'EInvalidDecimal', EInvalidStatus = 'EInvalidStatus', EAlreadyExpired = 'EAlreadyExpired', EInvalidCollateral = 'EInvalidCollateral', EInvalidCollateralAmount = 'EInvalidCollateralAmount', EInvalidAsset = 'EInvalidAsset', EInvalidAssetAmount = 'EInvalidAssetAmount', EDurationNotFinished = 'EDurationNotFinished', ELoanReqNotExpired = 'ELoanReqNotExpired', ELoanOfferNotExpired = 'ELoanOfferNotExpired', ENoOracleFeedAvailable = 'ENoOracleFeedAvailable', EInvalidLiqThreshold = 'EInvalidLiqThreshold', EOracleNotSet = 'EOracleNotSet', EOraclePriceZero = 'EOraclePriceZero', EOraclePriceStale = 'EOraclePriceStale', ENotEnoughForOracleUpdate = 'ENotEnoughForOracleUpdate', ENotOracleBaseAssetId = 'ENotOracleBaseAssetId', ENotProtocolOwner = 'ENotProtocolOwner', ENotProtocolAdmin = 'ENotProtocolAdmin', EProtocolConfigNotSet = 'EProtocolConfigNotSet', EProtocolPaused = 'EProtocolPaused', EOralceCollateralNotSet = 'EOralceCollateralNotSet', EOralceAssetNotSet = 'EOralceAssetNotSet' };
+export enum ErrorOutput { EMsgSenderAndBorrowerNotSame = 'EMsgSenderAndBorrowerNotSame', EMsgSenderAndLenderNotSame = 'EMsgSenderAndLenderNotSame', EAmountLessThanOrEqualToRepaymentAmount = 'EAmountLessThanOrEqualToRepaymentAmount', ESameAssetSameCollateral = 'ESameAssetSameCollateral', EInvalidDuration = 'EInvalidDuration', EInvalidDecimal = 'EInvalidDecimal', EInvalidStatus = 'EInvalidStatus', EAlreadyExpired = 'EAlreadyExpired', EInvalidCollateral = 'EInvalidCollateral', EInvalidCollateralAmount = 'EInvalidCollateralAmount', EInvalidAsset = 'EInvalidAsset', EInvalidAssetAmount = 'EInvalidAssetAmount', EDurationNotFinished = 'EDurationNotFinished', ELoanReqNotExpired = 'ELoanReqNotExpired', ELoanOfferNotExpired = 'ELoanOfferNotExpired', ENoOracleFeedAvailable = 'ENoOracleFeedAvailable', EInvalidLiqThreshold = 'EInvalidLiqThreshold', EOracleNotSet = 'EOracleNotSet', EOraclePriceZero = 'EOraclePriceZero', EOraclePriceStale = 'EOraclePriceStale', ENotEnoughForOracleUpdate = 'ENotEnoughForOracleUpdate', ENotOracleBaseAssetId = 'ENotOracleBaseAssetId', ENotProtocolOwner = 'ENotProtocolOwner', ENotProtocolAdmin = 'ENotProtocolAdmin', EProtocolConfigNotSet = 'EProtocolConfigNotSet', EProtocolPaused = 'EProtocolPaused', EOralceCollateralNotSet = 'EOralceCollateralNotSet', EOralceAssetNotSet = 'EOralceAssetNotSet' };
 
 export type AddressInput = { bits: string };
 export type AddressOutput = AddressInput;
@@ -32,8 +31,10 @@ export type ClaimExpiredLoanOfferEventInput = { loan_id: BigNumberish, lender: A
 export type ClaimExpiredLoanOfferEventOutput = { loan_id: BN, lender: AddressOutput, asset: string, amount: BN };
 export type ClaimExpiredLoanReqEventInput = { loan_id: BigNumberish, borrower: AddressInput, collateral: string, amount: BigNumberish };
 export type ClaimExpiredLoanReqEventOutput = { loan_id: BN, borrower: AddressOutput, collateral: string, amount: BN };
-export type LiquidationInput = { liquidation_request: boolean, liquidation_threshold_in_bps: BigNumberish, liquidation_flag_internal: boolean };
-export type LiquidationOutput = { liquidation_request: boolean, liquidation_threshold_in_bps: BN, liquidation_flag_internal: boolean };
+export type I128Input = { underlying: U128Input };
+export type I128Output = { underlying: U128Output };
+export type LiquidationInput = { liquidation_threshold_in_bps: BigNumberish, liquidation_flag_internal: boolean };
+export type LiquidationOutput = { liquidation_threshold_in_bps: BN, liquidation_flag_internal: boolean };
 export type LoanInput = { borrower: AddressInput, lender: AddressInput, asset: string, collateral: string, asset_amount: BigNumberish, repayment_amount: BigNumberish, collateral_amount: BigNumberish, created_timestamp: BigNumberish, start_timestamp: BigNumberish, duration: BigNumberish, status: BigNumberish, liquidation: LiquidationInput };
 export type LoanOutput = { borrower: AddressOutput, lender: AddressOutput, asset: string, collateral: string, asset_amount: BN, repayment_amount: BN, collateral_amount: BN, created_timestamp: BN, start_timestamp: BN, duration: BN, status: BN, liquidation: LiquidationOutput };
 export type LoanCancelledEventInput = { loan_id: BigNumberish, borrower: AddressInput, collateral: string, amount: BigNumberish };
@@ -54,6 +55,12 @@ export type LoanRequestedEventInput = { loan_id: BigNumberish, borrower: Address
 export type LoanRequestedEventOutput = { loan_id: BN, borrower: AddressOutput, asset: string, asset_amount: BN, collateral: string, collateral_amount: BN, duration: BN, repayment_amount: BN, liquidation: boolean };
 export type ProtocolConfigInput = { protocol_fee_receiver: AddressInput, protocol_fee: BigNumberish, protocol_liquidation_fee: BigNumberish, liquidator_fee: BigNumberish, time_request_loan_expires: BigNumberish, oracle_max_stale: BigNumberish, min_loan_duration: BigNumberish };
 export type ProtocolConfigOutput = { protocol_fee_receiver: AddressOutput, protocol_fee: BN, protocol_liquidation_fee: BN, liquidator_fee: BN, time_request_loan_expires: BN, oracle_max_stale: BN, min_loan_duration: BN };
+export type TemporalNumericValueInput = { timestamp_ns: BigNumberish, quantized_value: I128Input };
+export type TemporalNumericValueOutput = { timestamp_ns: BN, quantized_value: I128Output };
+export type TemporalNumericValueInputInput = { temporal_numeric_value: TemporalNumericValueInput, id: string, publisher_merkle_root: string, value_compute_alg_hash: string, r: string, s: string, v: BigNumberish };
+export type TemporalNumericValueInputOutput = { temporal_numeric_value: TemporalNumericValueOutput, id: string, publisher_merkle_root: string, value_compute_alg_hash: string, r: string, s: string, v: number };
+export type U128Input = { upper: BigNumberish, lower: BigNumberish };
+export type U128Output = { upper: BN, lower: BN };
 
 export type AxiosFuelCoreConfigurables = Partial<{
   PROTOCOL_OWNER: AddressInput;
@@ -144,20 +151,24 @@ const abi = {
     {
       "type": "struct std::address::Address",
       "concreteTypeId": "f597b637c3b0f588fb8d7086c6f4735caa3122b85f0423b82e489f9bb58e2308",
-      "metadataTypeId": 16
-    },
-    {
-      "type": "struct std::bytes::Bytes",
-      "concreteTypeId": "cdd87b7d12fe505416570c294c884bca819364863efe3bf539245fa18515fbbb",
       "metadataTypeId": 17
     },
     {
-      "type": "struct std::vec::Vec<struct std::bytes::Bytes>",
-      "concreteTypeId": "2601885b27af3627b8910876fc176d900cec2b16ec78c538f5f312e785d915f5",
+      "type": "struct std::vec::Vec<struct stork_sway_sdk::interface::TemporalNumericValueInput>",
+      "concreteTypeId": "e67278f564f3da524afebc87950681dff66e11946370df7f4c68b5f01329590b",
       "metadataTypeId": 20,
       "typeArguments": [
-        "cdd87b7d12fe505416570c294c884bca819364863efe3bf539245fa18515fbbb"
+        "672654baba0e998dd82f818c92c2b544c9275ee09007b0f65f59195a94a916d6"
       ]
+    },
+    {
+      "type": "struct stork_sway_sdk::interface::TemporalNumericValueInput",
+      "concreteTypeId": "672654baba0e998dd82f818c92c2b544c9275ee09007b0f65f59195a94a916d6",
+      "metadataTypeId": 21
+    },
+    {
+      "type": "u256",
+      "concreteTypeId": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e"
     },
     {
       "type": "u64",
@@ -272,6 +283,14 @@ const abi = {
         {
           "name": "EProtocolPaused",
           "typeId": "2e38e77b22c314a449e91fafed92a43826ac6aa403ae6a8acb6cf58239fbaf5d"
+        },
+        {
+          "name": "EOralceCollateralNotSet",
+          "typeId": "2e38e77b22c314a449e91fafed92a43826ac6aa403ae6a8acb6cf58239fbaf5d"
+        },
+        {
+          "name": "EOralceAssetNotSet",
+          "typeId": "2e38e77b22c314a449e91fafed92a43826ac6aa403ae6a8acb6cf58239fbaf5d"
         }
       ]
     },
@@ -293,7 +312,7 @@ const abi = {
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -315,7 +334,7 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "collateral",
@@ -337,7 +356,7 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "collateral",
@@ -359,11 +378,11 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -389,11 +408,11 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "collateral_amount",
@@ -411,11 +430,11 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -445,7 +464,7 @@ const abi = {
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -467,7 +486,7 @@ const abi = {
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -509,11 +528,11 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -535,7 +554,7 @@ const abi = {
         },
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -572,10 +591,6 @@ const abi = {
       "metadataTypeId": 13,
       "components": [
         {
-          "name": "liquidation_request",
-          "typeId": "b760f44fa5965c2474a3b471467a22c43185152129295af588b022ae50b50903"
-        },
-        {
           "name": "liquidation_threshold_in_bps",
           "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
         },
@@ -591,11 +606,11 @@ const abi = {
       "components": [
         {
           "name": "borrower",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "lender",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "asset",
@@ -645,7 +660,7 @@ const abi = {
       "components": [
         {
           "name": "protocol_fee_receiver",
-          "typeId": 16
+          "typeId": 17
         },
         {
           "name": "protocol_fee",
@@ -674,8 +689,18 @@ const abi = {
       ]
     },
     {
-      "type": "struct std::address::Address",
+      "type": "struct signed_int::i128::I128",
       "metadataTypeId": 16,
+      "components": [
+        {
+          "name": "underlying",
+          "typeId": 18
+        }
+      ]
+    },
+    {
+      "type": "struct std::address::Address",
+      "metadataTypeId": 17,
       "components": [
         {
           "name": "bits",
@@ -684,29 +709,15 @@ const abi = {
       ]
     },
     {
-      "type": "struct std::bytes::Bytes",
-      "metadataTypeId": 17,
-      "components": [
-        {
-          "name": "buf",
-          "typeId": 18
-        },
-        {
-          "name": "len",
-          "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
-        }
-      ]
-    },
-    {
-      "type": "struct std::bytes::RawBytes",
+      "type": "struct std::u128::U128",
       "metadataTypeId": 18,
       "components": [
         {
-          "name": "ptr",
-          "typeId": 2
+          "name": "upper",
+          "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
         },
         {
-          "name": "cap",
+          "name": "lower",
           "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
         }
       ]
@@ -750,6 +761,58 @@ const abi = {
       "typeParameters": [
         1
       ]
+    },
+    {
+      "type": "struct stork_sway_sdk::interface::TemporalNumericValueInput",
+      "metadataTypeId": 21,
+      "components": [
+        {
+          "name": "temporal_numeric_value",
+          "typeId": 22
+        },
+        {
+          "name": "id",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "publisher_merkle_root",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "value_compute_alg_hash",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "r",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "s",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "v",
+          "typeId": 23
+        }
+      ]
+    },
+    {
+      "type": "struct stork_sway_sdk::temporal_numeric_value::TemporalNumericValue",
+      "metadataTypeId": 22,
+      "components": [
+        {
+          "name": "timestamp_ns",
+          "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
+        },
+        {
+          "name": "quantized_value",
+          "typeId": 16
+        }
+      ]
+    },
+    {
+      "type": "u8",
+      "metadataTypeId": 23
     }
   ],
   "functions": [
@@ -951,7 +1014,7 @@ const abi = {
           "concreteTypeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
         }
       ],
-      "output": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0",
+      "output": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e",
       "attributes": [
         {
           "name": "storage",
@@ -1045,7 +1108,7 @@ const abi = {
       "inputs": [
         {
           "name": "update_data",
-          "concreteTypeId": "2601885b27af3627b8910876fc176d900cec2b16ec78c538f5f312e785d915f5"
+          "concreteTypeId": "e67278f564f3da524afebc87950681dff66e11946370df7f4c68b5f01329590b"
         }
       ],
       "output": "2e38e77b22c314a449e91fafed92a43826ac6aa403ae6a8acb6cf58239fbaf5d",
@@ -1161,10 +1224,6 @@ const abi = {
           "concreteTypeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
         },
         {
-          "name": "quote_asset_id",
-          "concreteTypeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
-        },
-        {
           "name": "feed_id",
           "concreteTypeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
         }
@@ -1270,7 +1329,7 @@ const abi = {
     {
       "name": "PROTOCOL_OWNER",
       "concreteTypeId": "f597b637c3b0f588fb8d7086c6f4735caa3122b85f0423b82e489f9bb58e2308",
-      "offset": 73296,
+      "offset": 79616,
       "indirect": false
     }
   ],
@@ -1278,10 +1337,6 @@ const abi = {
 };
 
 const storageSlots: StorageSlot[] = [
-  {
-    "key": "0a39595d259a5efe2b3dc40bc144ee512b36bbbdc301c8a149e95995636c181f",
-    "value": "0000000000000000000000000000000000000000000000000000000000000000"
-  },
   {
     "key": "2e8170da4249a563cbca44ea93c2462fe0f69dd58f1cadcf8a099330b0c297fc",
     "value": "0000000000000000000000000000000000000000000000000000000000000000"
@@ -1368,13 +1423,13 @@ export class AxiosFuelCore extends __Contract {
     is_loan_liquidation_by_oracle: InvokeFunction<[loan_id: BigNumberish], boolean>;
     liquidate_loan: InvokeFunction<[loan_id: BigNumberish], void>;
     offer_loan: InvokeFunction<[loan_info: LoanInput], void>;
-    pay_and_update_price_feeds: InvokeFunction<[update_data: Vec<Bytes>], void>;
+    pay_and_update_price_feeds: InvokeFunction<[update_data: Vec<TemporalNumericValueInputInput>], void>;
     protocol_config: InvokeFunction<[], ProtocolConfigOutput>;
     protocol_status: InvokeFunction<[], boolean>;
     repay_loan: InvokeFunction<[loan_id: BigNumberish], void>;
     request_loan: InvokeFunction<[loan_info: LoanInput], void>;
     update_oracle_contract: InvokeFunction<[addr: string], void>;
-    update_oracle_feed_id: InvokeFunction<[base_asset_id: string, quote_asset_id: string, feed_id: string], void>;
+    update_oracle_feed_id: InvokeFunction<[base_asset_id: string, feed_id: string], void>;
     update_protocol_config: InvokeFunction<[config: ProtocolConfigInput], void>;
     update_protocol_status: InvokeFunction<[flag: boolean], void>;
   };
