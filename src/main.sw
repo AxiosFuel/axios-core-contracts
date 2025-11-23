@@ -533,9 +533,6 @@ fn get_caller_address() -> Address {
         _ => revert(0),
     }
 }
-fn get_caller_identity() -> Identity {
-    msg_sender().unwrap()
-}
 fn get_asset_id_from_b256(asset: b256) -> AssetId {
     AssetId::from(asset)
 }
@@ -543,7 +540,6 @@ fn get_identity_from_address(addr: Address) -> Identity {
     Identity::Address(addr)
 }
 
-#[storage(read)]
 fn only_protocol_owner() {
     require(
         Identity::Address(PROTOCOL_OWNER) == msg_sender()
