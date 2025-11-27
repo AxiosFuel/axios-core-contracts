@@ -15,8 +15,6 @@ import {AxiosFuelCore} from './types';
 dotenv.config();
 
 
-
-// 0x423394F7B1549bF3C3C26cc8EC4e5A22D193d56cb27BB3d84b88aC94c9BbD5bF (contract id latest)
 async function main() {
   try {
     // const provider = await new Provider(
@@ -32,13 +30,13 @@ async function main() {
 
     // protocolDeployerWallet.connect(provider);
 
-    const protocolOwner = process.env.PROTOCOL_OWNER!;
-    const protocolOwnerWallet: WalletUnlocked =
-      Wallet.fromMnemonic(protocolOwner);
-    console.log(`Protocol Onwer Address: ${protocolOwnerWallet.address}`);
-    console.log(
-      `-------------------------------------------------------------`,
-    );
+    // const protocolOwner = process.env.PROTOCOL_OWNER!;
+    // const protocolOwnerWallet: WalletUnlocked =
+    //   Wallet.fromMnemonic(protocolOwner);
+    // console.log(`Protocol Onwer Address: ${protocolOwnerWallet.address}`);
+    // console.log(
+    //   `-------------------------------------------------------------`,
+    // );
 
     // const configurableConstants = {
     //   PROTOCOL_OWNER: { bits: protocolOwnerWallet.address.toB256() },
@@ -60,8 +58,10 @@ async function main() {
     //   getProtocolAdminWallet(),
     // );
     // await setProtocolStatusByAdmin(getProtocolAdminWallet());
+    // await setProtocolOracleByAdmin(getProtocolAdminWallet())
+    await setProtocolOracleFeedByAdmin(getProtocolAdminWallet());
     // await getProtocolConfig();
-    await doLoanReq();
+    // await doLoanReq();
   } catch (error) {
     console.log('logged error')
     console.error(error);
@@ -70,7 +70,7 @@ async function main() {
 
 
 async function getContractInstanceWithProvidedWallet(wallet: WalletUnlocked){
-  const contractId = '0x423394F7B1549bF3C3C26cc8EC4e5A22D193d56cb27BB3d84b88aC94c9BbD5bF';
+  const contractId = '0x15356c04379E38F7F7F8ADbcE1ea05361ad26bC45799B453dC556ECfbb30c72A';
   const provider = await getProviderForTestnet();
   wallet.connect(provider);
   const contractInstance = await new AxiosFuelCore(contractId, wallet);
@@ -121,6 +121,33 @@ async function setProtocolStatusByAdmin(protocolAdminWallet: WalletUnlocked) {
   const contractInstance = await getContractInstanceWithProvidedWallet(protocolAdminWallet);
   const tx = await contractInstance.functions
     .update_protocol_status(false)
+    .call();
+  await tx.waitForResult();
+  console.log(`------------------------debug------------------------------------------`);
+}
+
+async function setProtocolOracleFeedByAdmin(protocolAdminWallet: WalletUnlocked) {
+  const contractInstance = await getContractInstanceWithProvidedWallet(protocolAdminWallet);
+  // const fuelTestnetAssetId = '0x324d0c35a4299ef88138a656d5272c5a3a9ccde2630ae055dacaf9d13443d53b';
+  // const fuelStorkUSDId = '0x670b7091d54af59331f97a1ce4a321eab14fd257a8b57b75ce4d4a5afc9186f4';
+  // const usdcTestnetAssetId = '0xc26c91055de37528492e7e97d91c6f4abe34aae26f2c4d25cff6bfe45b5dc9a9';
+  // const fuelStorkUsdcUSDId = '0x7416a56f222e196d0487dce8a1a8003936862e7a15092a91898d69fa8bce290c';
+  // const fuelTestnetETHAssetId = '0xf8f8b6283d7fa5b672b530cbb84fcccb4ff8dc40f8176ef4544ddb1f1952ad07';
+  // const fuelStorkETHId = '0x59102b37de83bdda9f38ac8254e596f0d9ac61d2035c07936675e87342817160';
+  const fuelAXIOSFAUCETID='ADD HERE'
+  const fuelStorkAXIOSFAUCETID = '0x7416a56f222e196d0487dce8a1a8003936862e7a15092a91898d69fa8bce290c'
+  const tx = await contractInstance.functions
+    .update_oracle_feed_id(fuelAXIOSFAUCETID, fuelStorkAXIOSFAUCETID)
+    .call();
+  await tx.waitForResult();
+  console.log(`------------------------debug------------------------------------------`);
+}
+
+async function setProtocolOracleByAdmin(protocolAdminWallet: WalletUnlocked) {
+  const storkTestnetAddr = '0x09c88f50d535ac5ce8945e34c418233b1e3834be9a88effb57cb137321fbae0c';
+  const contractInstance = await getContractInstanceWithProvidedWallet(protocolAdminWallet);
+  const tx = await contractInstance.functions
+    .update_oracle_contract(storkTestnetAddr)
     .call();
   await tx.waitForResult();
   console.log(`------------------------debug------------------------------------------`);
@@ -236,7 +263,6 @@ async function doLoanReq(){
     duration: 37000,
     status: 0,
     liquidation: {      
-       liquidation_request: false,
        liquidation_threshold_in_bps: 0,
        liquidation_flag_internal: false,
     },
