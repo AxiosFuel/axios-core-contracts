@@ -4,9 +4,10 @@
   "description": "",
   "main": "deploy.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "deploy": "ts-node ./deploy.ts",
-    "format": "prettier --write ./deploy.ts"
+    "format": "prettier --write ./deploy.ts",
+    "format:test" : "prettier --write ./tests/"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.5.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "vitest": "^4.0.15"
   }
 }

@@ -6,6 +6,8 @@ A decentralized money market protocol that enables lending & borrowing with cust
 
 ```
 forc 0.69.1
+node -- version lts or (20+)
+pnpm
 ```
 
 ## Core Features
@@ -20,7 +22,7 @@ Borrower can create loan requests by specifying:
 - **Repayment Amount**: Total amount to be repaid (includes interest)
 - **Collateral Amount**: Security deposit required
 - **Duration**: Loan term length
-- **Liquidation(optional)**: Borrowers can enable automatic liquidation of their loans when collateral ratios fall below specified thresholds.
+- **Liquidation**: Borrowers can enable automatic liquidation of their loans when collateral ratios fall below specified thresholds.
 
 ### Loan Offers
 
@@ -32,7 +34,7 @@ Lender can create lending offer by specifying:
 - **Repayment Amount**: Total amount to be repaid (includes interest)
 - **Collateral Amount**: Security deposit required
 - **Duration**: Loan term length
-- **Liquidation(optional)**: Lenders can enable automatic liquidation of their loans when collateral ratios fall below specified thresholds. Price feeds are sourced from Pyth Network oracles.
+- **Liquidation**: Lenders can enable automatic liquidation of their loans when collateral ratios fall below specified thresholds. Price feeds are sourced from Pyth Network oracles.
 
 ### Loan Management
 

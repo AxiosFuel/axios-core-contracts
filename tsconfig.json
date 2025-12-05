@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["./deploy.ts"],
+  "include": ["./deploy.ts", "tests/setup.ts", "tests/markets.test.ts"],
   "exclude": ["node_modules"]
 }
