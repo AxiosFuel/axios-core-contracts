@@ -113,7 +113,14 @@ impl FixedMarket for Contract {
         require(
             loan_info
                 .liquidation
-                .liquidation_threshold_in_bps < 10000,
+                .liquidation_threshold_in_bps > 0,
+            Error::EInvalidLiqThreshold,
+        );
+
+        require(
+            loan_info
+                .liquidation
+                .liquidation_threshold_in_bps < 81000,
             Error::EInvalidLiqThreshold,
         );
         let amount = msg_amount();
@@ -187,10 +194,17 @@ impl FixedMarket for Contract {
             collateral_oracle_id != asset_oracle_id,
             Error::ENoOracleFeedAvailable,
         );
+
         require(
             loan_info
                 .liquidation
-                .liquidation_threshold_in_bps < 10000,
+                .liquidation_threshold_in_bps > 0,
+            Error::EInvalidLiqThreshold,
+        );
+        require(
+            loan_info
+                .liquidation
+                .liquidation_threshold_in_bps < 81000,
             Error::EInvalidLiqThreshold,
         );
         let amount = msg_amount();
