@@ -651,6 +651,7 @@ fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
 
 #[storage(read)]
 fn get_price_from_oracle_internal(feed_id: b256) -> u256 {
+    const TAI64_OFFSET: u64 = 4611686018427387914; // This is 2^62 + 10
     let stork_contract_id = storage.stork_contract.read();
     require(
         stork_contract_id != ContractId::zero(),
@@ -665,14 +666,16 @@ fn get_price_from_oracle_internal(feed_id: b256) -> u256 {
 
     require(quantized_value > I128::zero(), Error::EOraclePriceZero);
 
-    if (time_stamp > timestamp()) {
-        let time_elapsed_in_seconds = time_stamp - timestamp();
+    let time_stamp_tai64 = time_stamp / 1_000_000_000 + TAI64_OFFSET;
+
+    if (time_stamp_tai64 > timestamp()) {
+        let time_elapsed_in_seconds = time_stamp_tai64 - timestamp();
         require(
             time_elapsed_in_seconds < get_oracle_max_stale(),
             Error::EOraclePriceStale,
         );
     } else {
-        let time_elapsed_in_seconds = timestamp() - time_stamp;
+        let time_elapsed_in_seconds = timestamp() - time_stamp_tai64;
         require(
             time_elapsed_in_seconds < get_oracle_max_stale(),
             Error::EOraclePriceStale,
