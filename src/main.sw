@@ -120,7 +120,7 @@ impl FixedMarket for Contract {
         require(
             loan_info
                 .liquidation
-                .liquidation_threshold_in_bps < 81000,
+                .liquidation_threshold_in_bps < 8000,
             Error::EInvalidLiqThreshold,
         );
         let amount = msg_amount();
@@ -204,7 +204,7 @@ impl FixedMarket for Contract {
         require(
             loan_info
                 .liquidation
-                .liquidation_threshold_in_bps < 81000,
+                .liquidation_threshold_in_bps < 8000,
             Error::EInvalidLiqThreshold,
         );
         let amount = msg_amount();
