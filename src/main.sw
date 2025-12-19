@@ -50,6 +50,30 @@ impl FixedMarket for Contract {
     #[storage(read, write)]
     fn update_protocol_config(config: ProtocolConfig) {
         only_protocol_admin();
+        require(
+            config
+                .protocol_fee_receiver != Address::zero(),
+            Error::EInvalidProtocolConfig,
+        );
+        require(config.liquidator_fee > 0, Error::ENotProtocolOwner);
+        require(
+            config
+                .protocol_fee + config
+                .liquidator_fee + config
+                .protocol_liquidation_fee < 10_000,
+            Error::EInvalidProtocolConfig,
+        );
+        require(
+            config
+                .time_request_loan_expires > 0,
+            Error::EInvalidProtocolConfig,
+        );
+        require(config.oracle_max_stale >= 30, Error::EInvalidProtocolConfig);
+        require(
+            config
+                .min_loan_duration >= 600,
+            Error::EInvalidProtocolConfig,
+        );
         storage.protocol_config.write(config);
     }
 

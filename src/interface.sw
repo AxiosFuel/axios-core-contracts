@@ -80,6 +80,7 @@ pub enum Error {
     EProtocolPaused: (),
     EOralceCollateralNotSet: (),
     EOralceAssetNotSet: (),
+    EInvalidProtocolConfig: (),
 }
 
 abi FixedMarket {
