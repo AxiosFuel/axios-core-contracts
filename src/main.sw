@@ -498,7 +498,7 @@ impl FixedMarket for Contract {
         let stork_oracle_dispatcher = abi(Stork, stork_contract_id.bits());
         let stork_update_fee = stork_oracle_dispatcher.get_update_fee_v1(update_data);
         require(
-            msg_amount() >= stork_update_fee,
+            msg_amount() == stork_update_fee,
             Error::ENotEnoughForOracleUpdate,
         );
         stork_oracle_dispatcher
