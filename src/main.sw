@@ -266,6 +266,8 @@ impl FixedMarket for Contract {
             loan.created_timestamp + get_req_expire_duration() > timestamp(),
             Error::EAlreadyExpired,
         );
+        require(loan.borrower == Address::zero(), Error::EBorrowerAlreadySet);
+        require(loan.lender != Address::zero(), Error::ELenderAlreadySet);
         let borrower = get_caller_address();
         loan.borrower = borrower;
         loan.start_timestamp = timestamp();
@@ -414,6 +416,8 @@ impl FixedMarket for Contract {
             loan.created_timestamp + get_req_expire_duration() > timestamp(),
             Error::EAlreadyExpired,
         );
+        require(loan.borrower != Address::zero(), Error::EBorrowerAlreadySet);
+        require(loan.lender == Address::zero(), Error::ELenderAlreadySet);
         loan.lender = get_caller_address();
         loan.start_timestamp = timestamp();
         loan.status = 2; // magic number 2 is active (ref Enum at interface)

@@ -81,6 +81,8 @@ pub enum Error {
     EOralceCollateralNotSet: (),
     EOralceAssetNotSet: (),
     EInvalidProtocolConfig: (),
+    EBorrowerAlreadySet: (),
+    ELenderAlreadySet: (),
 }
 
 abi FixedMarket {
