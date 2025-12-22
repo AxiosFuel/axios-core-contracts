@@ -1,7 +1,7 @@
 contract;
 mod events;
 mod interface;
-use interface::{Error, FixedMarket, Loan, ProtocolConfig, SRC20, Status};
+use interface::{Error, FixedMarket, LiquidationCheck, Loan, ProtocolConfig, SRC20, Status};
 
 use events::*;
 use std::auth::msg_sender;
@@ -478,37 +478,80 @@ impl FixedMarket for Contract {
     fn liquidate_loan(loan_id: u64) {
         require(!is_protocol_paused(), Error::EProtocolPaused);
         let mut loan = storage.loans.get(loan_id).read();
-        // loan must be active
+        // Loan must be active (status 2)
         require(loan.status == 2, Error::EInvalidStatus);
-        let can_loan_be_liquidated = can_liquidate_loan(loan_id);
-        if (can_loan_be_liquidated) {
-            let protocol_fee = (loan.collateral_amount * get_protocol_liq_fee()) / 10000;
-            let liquidator_amount = (loan.collateral_amount * get_liquidator_fee()) / 10000;
-            let lender_amount = loan.collateral_amount - liquidator_amount - protocol_fee;
-            loan.status = 4;
-            storage.loans.insert(loan_id, loan);
-            let collateral_asset_id: AssetId = get_asset_id_from_b256(loan.collateral);
+
+        let liquidation_status = calculate_liquidation_status(loan_id);
+
+        require(liquidation_status.can_liquidate, Error::ECannotLiquidate);
+
+        let protocol_fee = (loan.collateral_amount * get_protocol_liq_fee()) / 10000;
+        let liquidator_fee = (loan.collateral_amount * get_liquidator_fee()) / 10000;
+        let total_fees = protocol_fee + liquidator_fee;
+        require(
+            total_fees <= loan.collateral_amount,
+            Error::EFeesExceedCollateral,
+        );
+
+        let remaining_collateral = loan.collateral_amount - total_fees;
+
+        let mut lender_amount: u64 = 0;
+        let mut borrower_refund: u64 = 0;
+
+        if remaining_collateral >= liquidation_status.collateral_needed
+        {
+            lender_amount = liquidation_status.collateral_needed;
+            borrower_refund = remaining_collateral - liquidation_status.collateral_needed;
+        } else {
+            lender_amount = remaining_collateral;
+            borrower_refund = 0;
+        }
+
+        require(
+            lender_amount + borrower_refund + total_fees == loan.collateral_amount,
+            Error::EInvalidDistribution,
+        );
+
+        loan.status = 4;
+        storage.loans.insert(loan_id, loan);
+        let collateral_asset_id: AssetId = get_asset_id_from_b256(loan.collateral);
+
+        if lender_amount > 0 {
             let lender_identity: Identity = get_identity_from_address(loan.lender);
             transfer(lender_identity, collateral_asset_id, lender_amount);
-            transfer(
-                msg_sender()
-                    .unwrap(),
-                collateral_asset_id,
-                liquidator_amount,
-            );
+        }
+
+        if liquidator_fee > 0 {
+            transfer(msg_sender().unwrap(), collateral_asset_id, liquidator_fee);
+        }
+
+        if protocol_fee > 0 {
             let protocol_fee_receiver_identity: Identity = get_identity_from_address(get_protocol_fee_receiver());
             transfer(
                 protocol_fee_receiver_identity,
                 collateral_asset_id,
                 protocol_fee,
             );
-            log(LoanLiquidatedEvent {
-                loan_id,
-                borrower: loan.borrower,
-                lender: loan.lender,
-                collateral_amount: loan.collateral_amount,
-            });
         }
+
+        if borrower_refund > 0 {
+            let borrower_identity: Identity = get_identity_from_address(loan.borrower);
+            transfer(borrower_identity, collateral_asset_id, borrower_refund);
+        }
+
+        log(LoanLiquidatedEvent {
+            loan_id,
+            borrower: loan.borrower,
+            lender: loan.lender,
+            liquidator: msg_sender().unwrap(),
+            collateral_amount: loan.collateral_amount,
+            lender_amount,
+            liquidator_fee,
+            protocol_fee,
+            borrower_refund,
+            asset_price: liquidation_status.asset_price,
+            collateral_price: liquidation_status.collateral_price,
+        });
     }
 
     #[storage(read)]
@@ -645,13 +688,13 @@ fn can_liquidate_loan(loan_id: u64) -> bool {
     }
 
     if (loan.liquidation.liquidation_flag_internal) {
-        return check_can_liquidate_based_on_price_ratio_change(loan_id)
+        return calculate_liquidation_status(loan_id).can_liquidate
     }
     return false
 }
 
 #[storage(read)]
-fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
+fn calculate_liquidation_status(loan_id: u64) -> LiquidationCheck {
     let loan = storage.loans.get(loan_id).read();
 
     let collateral_oracle_id: b256 = storage.oracle_config.get(loan.collateral).try_read().unwrap_or(b256::zero());
@@ -662,9 +705,6 @@ fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
         Error::EOralceCollateralNotSet,
     );
     require(asset_oracle_id != b256::zero(), Error::EOralceAssetNotSet);
-
-    let liquidation_bps_u64: u64 = u64::from(10000u64);
-    let liquidation_bps_u256: u256 = liquidation_bps_u64.as_u256();
 
     let src20_dispatcher_collateral = abi(SRC20, loan.collateral);
     let collateral_asset_id = get_asset_id_from_b256(loan.collateral);
@@ -679,15 +719,51 @@ fn check_can_liquidate_based_on_price_ratio_change(loan_id: u64) -> bool {
     let loan_asset_price_from_oracle: u256 = get_price_from_oracle_internal(asset_oracle_id);
     let collateral_asset_price_from_oracle: u256 = get_price_from_oracle_internal(collateral_oracle_id);
 
+    require(
+        loan_asset_price_from_oracle > u256::zero(),
+        Error::EInvalidOraclePrice,
+    );
+    require(
+        collateral_asset_price_from_oracle > u256::zero(),
+        Error::EInvalidOraclePrice,
+    );
+
+    let liquidation_bps_u64: u64 = u64::from(10000u64);
+    let liquidation_bps_u256: u256 = liquidation_bps_u64.as_u256();
+
     let collateral_in_u256 = loan.collateral_amount.as_u256();
     let loan_in_u256 = loan.asset_amount.as_u256();
 
     let loan_in_usd = loan_in_u256 * loan_asset_price_from_oracle * u256::from(10_u64).pow(collateral_decimal_in_u32) * liquidation_bps_u256;
+
     let collateral_in_usd = collateral_in_u256 * collateral_asset_price_from_oracle * loan.liquidation.liquidation_threshold_in_bps.as_u256() * u256::from(10_u64).pow(asset_decimal_in_u32);
-    if loan_in_usd > collateral_in_usd {
-        return true
-    } else {
-        return false
+
+    let can_liquidate = loan_in_usd > collateral_in_usd;
+
+    let debt_value = loan.asset_amount.as_u256() * loan_asset_price_from_oracle;
+
+    let numerator = debt_value * u256::from(10_u64).pow(collateral_decimal_in_u32);
+    let denominator = collateral_asset_price_from_oracle * u256::from(10_u64).pow(asset_decimal_in_u32);
+
+    require(denominator > u256::zero(), Error::EInvalidOraclePrice);
+
+    let collateral_needed_u256 = numerator / denominator;
+    let collateral_needed_option: Option<u64> = <u64 as TryFrom<u256>>::try_from(collateral_needed_u256);
+
+    let collateral_needed = match collateral_needed_option {
+        Some(val) => val,
+        None => {
+            require(false, Error::ECollateralCalculationOverflow);
+            0
+        }
+    };
+    return LiquidationCheck {
+        can_liquidate,
+        collateral_needed: collateral_needed,
+        collateral_price: collateral_asset_price_from_oracle,
+        asset_price: loan_asset_price_from_oracle,
+        collateral_decimal,
+        asset_decimal,
     }
 }
 

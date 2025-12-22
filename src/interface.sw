@@ -51,6 +51,16 @@ impl ProtocolConfig {
         }
     }
 }
+
+pub struct LiquidationCheck {
+    pub can_liquidate: bool,
+    pub collateral_needed: u64,
+    pub collateral_price: u256,
+    pub asset_price: u256,
+    pub collateral_decimal: u8,
+    pub asset_decimal: u8,
+}
+
 pub enum Error {
     EMsgSenderAndBorrowerNotSame: (),
     EMsgSenderAndLenderNotSame: (),
@@ -83,6 +93,11 @@ pub enum Error {
     EInvalidProtocolConfig: (),
     EBorrowerAlreadySet: (),
     ELenderAlreadySet: (),
+    EInvalidOraclePrice: (),
+    ECannotLiquidate: (),
+    EFeesExceedCollateral: (),
+    EInvalidDistribution: (),
+    ECollateralCalculationOverflow: (),
 }
 
 abi FixedMarket {

@@ -21,12 +21,6 @@ pub struct LoanRepaidEvent {
     pub asset: b256,
     pub repayment_amount: u64,
 }
-pub struct LoanLiquidatedEvent {
-    pub loan_id: u64,
-    pub borrower: Address,
-    pub lender: Address,
-    pub collateral_amount: u64,
-}
 pub struct ClaimExpiredLoanReqEvent {
     pub loan_id: u64,
     pub borrower: Address,
@@ -77,4 +71,18 @@ pub struct ClaimExpiredLoanOfferEvent {
     pub lender: Address,
     pub asset: b256,
     pub amount: u64,
+}
+
+pub struct LoanLiquidatedEvent {
+    pub loan_id: u64,
+    pub borrower: Address,
+    pub lender: Address,
+    pub liquidator: Identity,
+    pub collateral_amount: u64,
+    pub lender_amount: u64,
+    pub liquidator_fee: u64,
+    pub protocol_fee: u64,
+    pub borrower_refund: u64,
+    pub asset_price: u256,
+    pub collateral_price: u256,
 }
