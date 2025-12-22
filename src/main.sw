@@ -38,6 +38,10 @@ impl FixedMarket for Contract {
     #[storage(read, write)]
     fn update_oracle_feed_id(base_asset_id: b256, feed_id: b256) {
         only_protocol_admin();
+        let src20_dispatcher_asset = abi(SRC20, base_asset_id);
+        let asset_id = get_asset_id_from_b256(base_asset_id);
+        let asset_decimal: u8 = src20_dispatcher_asset.decimals(asset_id).unwrap_or(0);
+        require(asset_decimal != 0, Error::BaseAssetNotSRC20);
         storage.oracle_config.insert(base_asset_id, feed_id);
     }
 

@@ -99,6 +99,7 @@ pub enum Error {
     EInvalidDistribution: (),
     ECollateralCalculationOverflow: (),
     EInsufficientCollateralizationAtActivation: (),
+    BaseAssetNotSRC20: (),
 }
 
 abi FixedMarket {
