@@ -98,6 +98,7 @@ pub enum Error {
     EFeesExceedCollateral: (),
     EInvalidDistribution: (),
     ECollateralCalculationOverflow: (),
+    EInsufficientCollateralizationAtActivation: (),
 }
 
 abi FixedMarket {

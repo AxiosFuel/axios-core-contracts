@@ -268,6 +268,14 @@ impl FixedMarket for Contract {
         );
         require(loan.borrower == Address::zero(), Error::EBorrowerAlreadySet);
         require(loan.lender != Address::zero(), Error::ELenderAlreadySet);
+
+        let liquidation_status = calculate_liquidation_status(loan_id);
+        require(
+            !liquidation_status
+                .can_liquidate,
+            Error::EInsufficientCollateralizationAtActivation,
+        );
+
         let borrower = get_caller_address();
         loan.borrower = borrower;
         loan.start_timestamp = timestamp();
@@ -418,6 +426,14 @@ impl FixedMarket for Contract {
         );
         require(loan.borrower != Address::zero(), Error::EBorrowerAlreadySet);
         require(loan.lender == Address::zero(), Error::ELenderAlreadySet);
+
+        let liquidation_status = calculate_liquidation_status(loan_id);
+        require(
+            !liquidation_status
+                .can_liquidate,
+            Error::EInsufficientCollateralizationAtActivation,
+        );
+
         loan.lender = get_caller_address();
         loan.start_timestamp = timestamp();
         loan.status = 2; // magic number 2 is active (ref Enum at interface)
