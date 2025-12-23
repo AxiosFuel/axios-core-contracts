@@ -62,13 +62,6 @@ impl FixedMarket for Contract {
         require(config.liquidator_fee > 0, Error::EInvalidProtocolConfig);
         require(
             config
-                .protocol_fee + config
-                .liquidator_fee + config
-                .protocol_liquidation_fee < 10_000,
-            Error::EInvalidProtocolConfig,
-        );
-        require(
-            config
                 .time_request_loan_expires > 0,
             Error::EInvalidProtocolConfig,
         );
