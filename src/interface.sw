@@ -37,17 +37,19 @@ pub struct ProtocolConfig {
     pub time_request_loan_expires: u64,
     pub oracle_max_stale: u64,
     pub min_loan_duration: u64,
+    pub lender_bonus: u64,
 }
 impl ProtocolConfig {
     pub fn default() -> Self {
         ProtocolConfig {
             protocol_fee_receiver: Address::zero(),
             protocol_fee: 0,
-            protocol_liquidation_fee: 100,
-            liquidator_fee: 100,
+            protocol_liquidation_fee: 30, // bps
+            liquidator_fee: 70, // bps
             time_request_loan_expires: 28800,
             oracle_max_stale: 30,
             min_loan_duration: 600,
+            lender_bonus: 200, // bps
         }
     }
 }
@@ -59,6 +61,19 @@ pub struct LiquidationCheck {
     pub asset_price: u256,
     pub collateral_decimal: u8,
     pub asset_decimal: u8,
+}
+
+impl LiquidationCheck {
+    pub fn default() -> Self {
+        LiquidationCheck {
+            can_liquidate: false,
+            collateral_needed: 0,
+            collateral_price: 0,
+            asset_price: 0,
+            collateral_decimal: 0,
+            asset_decimal: 0,
+        }
+    }
 }
 
 pub enum Error {
