@@ -37,6 +37,7 @@ pub struct ProtocolConfig {
     pub time_request_loan_expires: u64,
     pub oracle_max_stale: u64,
     pub min_loan_duration: u64,
+    pub lender_bonus: u64,
 }
 impl ProtocolConfig {
     pub fn default() -> Self {
@@ -48,6 +49,7 @@ impl ProtocolConfig {
             time_request_loan_expires: 28800,
             oracle_max_stale: 30,
             min_loan_duration: 600,
+            lender_bonus: 200,
         }
     }
 }

@@ -71,6 +71,7 @@ impl FixedMarket for Contract {
                 .min_loan_duration >= 600,
             Error::EInvalidProtocolConfig,
         );
+        require(config.lender_bonus > 0, Error::EInvalidProtocolConfig);
         storage.protocol_config.write(config);
     }
 
@@ -619,6 +620,11 @@ fn get_liquidator_fee() -> u64 {
 }
 
 #[storage(read)]
+fn get_lender_bonus() -> u64 {
+    storage.protocol_config.lender_bonus.read()
+}
+
+#[storage(read)]
 fn get_oracle_max_stale() -> u64 {
     storage.protocol_config.oracle_max_stale.read()
 }
@@ -657,10 +663,12 @@ fn handle_liquidation_internal(loan_id: u64, liquidation_status: LiquidationChec
     let mut lender_amount: u64 = 0;
     let mut borrower_refund: u64 = 0;
 
-    if remaining_collateral >= liquidation_status.collateral_needed
-    {
-        lender_amount = liquidation_status.collateral_needed;
-        borrower_refund = remaining_collateral - liquidation_status.collateral_needed;
+    let lender_bonus = (liquidation_status.collateral_needed * get_lender_bonus()) / 10000;
+    let lender_amount_total = liquidation_status.collateral_needed + lender_bonus;
+
+    if remaining_collateral >= lender_amount_total {
+        lender_amount = lender_amount_total;
+        borrower_refund = remaining_collateral - lender_amount_total;
     } else {
         lender_amount = remaining_collateral;
         borrower_refund = 0;
