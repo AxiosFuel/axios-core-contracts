@@ -71,7 +71,6 @@ impl FixedMarket for Contract {
                 .min_loan_duration >= 600,
             Error::EInvalidProtocolConfig,
         );
-        require(config.lender_bonus > 0, Error::EInvalidProtocolConfig);
         storage.protocol_config.write(config);
     }
 
@@ -620,11 +619,6 @@ fn get_liquidator_fee() -> u64 {
 }
 
 #[storage(read)]
-fn get_lender_bonus() -> u64 {
-    storage.protocol_config.lender_bonus.read()
-}
-
-#[storage(read)]
 fn get_oracle_max_stale() -> u64 {
     storage.protocol_config.oracle_max_stale.read()
 }
@@ -663,12 +657,10 @@ fn handle_liquidation_internal(loan_id: u64, liquidation_status: LiquidationChec
     let mut lender_amount: u64 = 0;
     let mut borrower_refund: u64 = 0;
 
-    let lender_bonus = (liquidation_status.collateral_needed * get_lender_bonus()) / 10000;
-    let total_lender_amount = liquidation_status.collateral_needed + lender_bonus;
-
-    if remaining_collateral >= total_lender_amount {
-        lender_amount = total_lender_amount;
-        borrower_refund = remaining_collateral - total_lender_amount;
+    if remaining_collateral >= liquidation_status.collateral_needed
+    {
+        lender_amount = liquidation_status.collateral_needed;
+        borrower_refund = remaining_collateral - liquidation_status.collateral_needed;
     } else {
         lender_amount = remaining_collateral;
         borrower_refund = 0;
@@ -768,7 +760,7 @@ fn calculate_liquidation_status(loan_id: u64) -> LiquidationCheck {
 
     let can_liquidate = loan_in_usd > collateral_in_usd;
 
-    let debt_value = loan.asset_amount.as_u256() * loan_asset_price_from_oracle;
+    let debt_value = loan.repayment_amount.as_u256() * loan_asset_price_from_oracle;
 
     let numerator = debt_value * u256::from(10_u64).pow(collateral_decimal_in_u32);
     let denominator = collateral_asset_price_from_oracle * u256::from(10_u64).pow(asset_decimal_in_u32);
